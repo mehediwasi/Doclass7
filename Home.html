@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocShare | Downloads</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-dark: #2d3748;
+            --text-light: #f7fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--primary-gradient);
+            background-size: 400% 400%;
+            animation: gradientAnim 15s ease infinite;
+        }
+
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .document-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .document-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .download-btn {
+            position: relative;
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        .download-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--secondary-gradient);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes gradientAnim {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        .file-type {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .document-card:hover .file-type {
+            transform: scale(1.1) rotate(10deg);
+        }
+    </style>
+</head>
+<body>
+    <nav style="padding: 1.5rem; background: var(--card-bg);">
+        <h1 style="color: var(--text-dark);">📁 DocShare Downloads</h1>
+    </nav>
+
+    <div class="documents-grid" id="documentsGrid">
+        <!-- Dynamic Content -->
+    </div>
+
+    <script>
+        // Load documents
+        const loadDocuments = () => {
+            const docs = JSON.parse(localStorage.getItem('docshare_files')) || [];
+            const grid = document.getElementById('documentsGrid');
+
+            docs.forEach(doc => {
+                const card = document.createElement('div');
+                card.className = 'document-card';
+                card.innerHTML = `
+                    <div class="file-type" style="background: ${getFileColor(doc)}">
+                        ${getFileIcon(doc)}
+                    </div>
+                    <h3 style="color: var(--text-dark); margin-bottom: 0.5rem;">${doc.title}</h3>
+                    <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1rem;">${doc.filename}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #667eea;">${doc.size}</span>
+                        <button class="download-btn" onclick="startDownload('${doc.data}', '${doc.filename}')">
+                            Download <i class="fas fa-download"></i>
+                            <div class="download-progress"></div>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // File type handling
+        function getFileIcon(doc) {
+            const ext = doc.filename.split('.').pop().toLowerCase();
+            const icons = {
+                pdf: '📄',
+                doc: '📝',
+                docx: '📝',
+                xls: '📊',
+                ppt: '📽',
+                default: '📁'
+            };
+            return icons[ext] || icons.default;
+        }
+
+        function getFileColor(doc) {
+            const ext = doc.filename.split('.').pop().toLowerCase();
+            const colors = {
+                pdf: '#ff6b6b',
+                doc: '#4bc0c8',
+                xls: '#c779d0',
+                ppt: '#feac5e',
+                default: '#868e96'
+            };
+            return colors[ext] || colors.default;
+        }
+
+        // Download with visual feedback
+        function startDownload(data, filename) {
+            const btn = event.currentTarget;
+            const progress = btn.querySelector('.download-progress');
+            
+            // Visual feedback
+            btn.style.pointerEvents = 'none';
+            progress.style.width = '100%';
+            
+            setTimeout(() => {
+                try {
+                    const link = document.createElement('a');
+                    link.href = data;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showToast('Download started!');
+                } catch (error) {
+                    showToast('Download failed!', 'error');
+                }
+                
+                // Reset button state
+                setTimeout(() => {
+                    progress.style.width = '0';
+                    btn.style.pointerEvents = 'all';
+                }, 1000);
+            }, 500);
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', loadDocuments);
+    </script>
+
+    <style>
+        /* Toast Styles */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { background: #43e97b; }
+        .toast.error { background: #ff6b6b; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .documents-grid {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .download-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</body>
+</html>
